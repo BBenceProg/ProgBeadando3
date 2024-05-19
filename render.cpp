@@ -3,7 +3,7 @@
 
 using namespace genv;
 
-Render::Render()
+Render::Render() : Widget(0, 0, XX, YY) // Initializing Widget with default position and size
 {
     genv::gout.open(XX, YY);
 }
