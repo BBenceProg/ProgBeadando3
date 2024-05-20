@@ -8,7 +8,7 @@ using namespace genv;
 
 GameMaster::GameMaster() :
     board(6, std::vector<Player>(7, NONE)), current_player(RED),
-    game_over(false), highlighted_col(-1), level(0) {
+    game_over(false), highlighted_col(-1), level(0), winner(NONE) {
     std::srand(std::time(0));
 }
 
@@ -18,6 +18,7 @@ void GameMaster::reset() {
     game_over = false;
     highlighted_col = -1;
     level = 1;
+    winner = NONE;
 }
 
 bool GameMaster::place_piece(GameMaster &state, int col) {
@@ -121,15 +122,17 @@ void GameMaster::run(GameMaster &state, Render &renderer) {
     gin.timer(30);
     event ev;
     while (gin >> ev && ev.keycode != key_escape) {
+        renderer.handle_event(ev); // Események kezelése
+
         if (state.level == 0) {
             if (ev.type == ev_mouse && ev.button == btn_left) {
-                if (ev.pos_x >= XX/2 - 50 && ev.pos_x <= XX/2 + 50 &&
-                    ev.pos_y >= YY/2 && ev.pos_y <= YY/2 + 20) {
+                if (ev.pos_x >= XX/2 - 75 && ev.pos_x <= XX/2 + 60 &&
+                    ev.pos_y >= YY/2 - 20 && ev.pos_y <= YY/2) {
                     state.reset();
-                } else if (ev.pos_x >= XX/2 - 50 && ev.pos_x <= XX/2 + 50 &&
-                           ev.pos_y >= YY/2 + 40 && ev.pos_y <= YY/2 + 60) {
+                } else if (ev.pos_x >= XX/2 - 65 && ev.pos_x <= XX/2 + 60 &&
+                           ev.pos_y >= YY/2 + 20 && ev.pos_y <= YY/2 + 40) {
                     state.reset();
-                    state.level = 3; //Ai szint
+                    state.level = 3;
                 }
             }
             renderer.draw_menu();
@@ -149,6 +152,7 @@ void GameMaster::run(GameMaster &state, Render &renderer) {
                             state.game_over = true;
                             state.level = 2;
                             state.draw = (winner == DRAW);
+                            state.winner = winner;
                         } else {
                             switch_player(state);
                             if (state.level == 3 && state.current_player == YELLOW && !state.game_over) {
@@ -158,6 +162,7 @@ void GameMaster::run(GameMaster &state, Render &renderer) {
                                     state.game_over = true;
                                     state.level = 2;
                                     state.draw = (winner == DRAW);
+                                    state.winner = winner;
                                 }
                             }
                         }
@@ -167,8 +172,8 @@ void GameMaster::run(GameMaster &state, Render &renderer) {
             renderer.draw_board(state);
         } else if (state.level == 2) {
             if (ev.type == ev_mouse && ev.button == btn_left) {
-                if (ev.pos_x >= XX/2 - 50 && ev.pos_x <= XX/2 + 50 &&
-                    ev.pos_y >= YY/2 + 30 && ev.pos_y <= YY/2 + 50) {
+                if (ev.pos_x >= XX/2 - 65 && ev.pos_x <= XX/2 + 60 &&
+                    ev.pos_y >= YY/2 + 10 && ev.pos_y <= YY/2 + 30) {
                     state.level = 0;
                 }
             }
@@ -176,3 +181,4 @@ void GameMaster::run(GameMaster &state, Render &renderer) {
         }
     }
 }
+

@@ -16,6 +16,7 @@ public:
     int highlighted_col;
     int level;
     bool draw;
+    Player winner;
 
     GameMaster();
 
