@@ -1,11 +1,16 @@
 #include "graphics.hpp"
 #include "gamemaster.hpp"
 #include "render.hpp"
+#include <cstdlib>
+#include <ctime>
+
 using namespace genv;
 
 GameMaster::GameMaster() :
     board(6, std::vector<Player>(7, NONE)), current_player(RED),
-    game_over(false), highlighted_col(-1), level(0) {}
+    game_over(false), highlighted_col(-1), level(0) {
+    std::srand(std::time(0));
+}
 
 void GameMaster::reset() {
     board = std::vector<std::vector<Player>>(6, std::vector<Player>(7, NONE));
@@ -74,6 +79,44 @@ Player GameMaster::check_winner(const GameMaster &state) {
     return DRAW;
 }
 
+bool GameMaster::can_win_next_move(const GameMaster &state, Player player, int &col) {
+    for (int c = 0; c < 7; ++c) {
+        GameMaster copy = state;
+        copy.current_player = player;
+        if (copy.place_piece(copy, c) && copy.check_winner(copy) == player) {
+            col = c;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool GameMaster::can_block_opponent(const GameMaster &state, Player player, int &col) {
+    Player opponent = (player == RED) ? YELLOW : RED;
+    for (int c = 0; c < 7; ++c) {
+        GameMaster copy = state;
+        copy.current_player = opponent;
+        if (copy.place_piece(copy, c) && copy.check_winner(copy) == opponent) {
+            col = c;
+            return true;
+        }
+    }
+    return false;
+}
+
+void GameMaster::ai_move() {
+    int col = -1;
+    if (can_win_next_move(*this, YELLOW, col) || can_block_opponent(*this, YELLOW, col)) {
+        place_piece(*this, col);
+    } else {
+        // Random lépést csinál ha nem tud nyerni/blokkolni
+        do {
+            col = std::rand() % 7;
+        } while (!place_piece(*this, col));
+    }
+    switch_player(*this);
+}
+
 void GameMaster::run(GameMaster &state, Render &renderer) {
     gin.timer(30);
     event ev;
@@ -83,10 +126,14 @@ void GameMaster::run(GameMaster &state, Render &renderer) {
                 if (ev.pos_x >= XX/2 - 50 && ev.pos_x <= XX/2 + 50 &&
                     ev.pos_y >= YY/2 && ev.pos_y <= YY/2 + 20) {
                     state.reset();
+                } else if (ev.pos_x >= XX/2 - 50 && ev.pos_x <= XX/2 + 50 &&
+                           ev.pos_y >= YY/2 + 40 && ev.pos_y <= YY/2 + 60) {
+                    state.reset();
+                    state.level = 3; //Ai szint
                 }
             }
             renderer.draw_menu();
-        } else if (state.level == 1) {
+        } else if (state.level == 1 || state.level == 3) {
             if (ev.type == ev_mouse) {
                 int col = ev.pos_x / CELL_SIZE;
                 if (col >= 0 && col < 7) {
@@ -104,6 +151,15 @@ void GameMaster::run(GameMaster &state, Render &renderer) {
                             state.draw = (winner == DRAW);
                         } else {
                             switch_player(state);
+                            if (state.level == 3 && state.current_player == YELLOW && !state.game_over) {
+                                ai_move();
+                                winner = check_winner(state);
+                                if (winner != NONE) {
+                                    state.game_over = true;
+                                    state.level = 2;
+                                    state.draw = (winner == DRAW);
+                                }
+                            }
                         }
                     }
                 }

@@ -1,5 +1,5 @@
-#ifndef GAMEMASTER_H
-#define GAMEMASTER_H
+#ifndef GAMEMASTER_HPP
+#define GAMEMASTER_HPP
 
 #include <vector>
 
@@ -10,8 +10,8 @@ class Render;
 class GameMaster
 {
 public:
-    std::vector<std::vector<Player>> board; // itt valamit kéne privatelni nem?
-    Player current_player;                  // setter getter?
+    std::vector<std::vector<Player>> board;
+    Player current_player;
     bool game_over;
     int highlighted_col;
     int level;
@@ -24,6 +24,11 @@ public:
     bool place_piece(GameMaster &state, int col);
     Player check_winner(const GameMaster &state);
     void switch_player(GameMaster &state);
+    void ai_move();
+
+private:
+    bool can_win_next_move(const GameMaster &state, Player player, int &col);
+    bool can_block_opponent(const GameMaster &state, Player player, int &col);
 };
 
-#endif // GAMEMASTER_H
+#endif // GAMEMASTER_HPP
